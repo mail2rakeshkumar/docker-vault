@@ -1,13 +1,15 @@
-#!/usr/bin/dumb-init /bin/sh
+#!/bin/sh
 set -e
-
-# Note above that we run dumb-init as PID 1 in order to reap zombie processes
-# as well as forward signals to all processes in its session. Normally, sh
-# wouldn't do either of these functions so we'd leak zombies as well as do
-# unclean termination of all our sub-processes.
 
 # Prevent core dumps
 ulimit -c 0
+
+function trap_sigterm() {
+    echo "Signal received. Shutting down Vault.."
+	kill -SIGTERM ${pid?}    
+}
+
+trap 'trap_sigterm' SIGINT SIGTERM
 
 # Allow setting VAULT_REDIRECT_ADDR and VAULT_CLUSTER_ADDR using an interface
 # name instead of an IP address. The interface name is specified using
@@ -95,10 +97,13 @@ if [ "$1" = 'vault' ]; then
             setcap cap_ipc_lock=-ep $(readlink -f $(which vault))
         fi
     fi
-
-    if [ "$(id -u)" = '0' ]; then
-      set -- su-exec vault "$@"
-    fi
 fi
 
-exec "$@"
+if [ "$(id -u)" = '0' ]; then
+	su - vault -c "$@"
+else
+    exec "$@" &
+fi
+
+VAULT_PID=$?
+wait
