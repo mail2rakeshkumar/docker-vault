@@ -6,7 +6,7 @@ ulimit -c 0
 
 function trap_sigterm() {
     echo "Signal received. Shutting down Vault.."
-	kill -SIGTERM ${pid?}    
+    kill -SIGTERM $(pidof vault)
 }
 
 trap 'trap_sigterm' SIGINT SIGTERM
@@ -99,11 +99,9 @@ if [ "$1" = 'vault' ]; then
     fi
 fi
 
-if [ "$(id -u)" = '0' ]; then
-	su - vault -c "$@"
+if [[ "$(id -u)" == '0' ]]
+then
+	exec su vault -c "vault server -config=/vault/config/config.hcl"
 else
-    exec "$@" &
+    exec "$@" 
 fi
-
-VAULT_PID=$?
-wait
