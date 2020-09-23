@@ -4,13 +4,6 @@ set -e
 # Prevent core dumps
 ulimit -c 0
 
-function trap_sigterm() {
-    echo "Signal received. Shutting down Vault.."
-    kill -SIGTERM $(pidof vault)
-}
-
-trap 'trap_sigterm' SIGINT SIGTERM
-
 # Allow setting VAULT_REDIRECT_ADDR and VAULT_CLUSTER_ADDR using an interface
 # name instead of an IP address. The interface name is specified using
 # VAULT_REDIRECT_INTERFACE and VAULT_CLUSTER_INTERFACE environment variables. If
